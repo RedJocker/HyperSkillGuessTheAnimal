@@ -6,7 +6,8 @@ To read the description of the first stage go to /Guess the Animal/Validate the 
 
 To read the description of the second stage go to /Guess the Animal/Animal facts.
 
-To read the code go to task/src/animals
+To read the code go to /Guess the Animal/task/src/animals
+
 
 My profile at HyperSkill:
 
