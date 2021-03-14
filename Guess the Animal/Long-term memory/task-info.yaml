@@ -1,0 +1,774 @@
+type: edu
+files:
+- name: src/animals/Main.java
+  visible: true
+  text: |
+    package animals;
+
+    import animals.userInterface.UI;
+
+    public class Main {
+
+        public static void main(String[] args) {
+            new  UI().start();
+            System.out.println();
+        }
+    }
+  learner_created: false
+- name: src/animals/userInterface/WordService.java
+  visible: true
+  text: |
+    package animals.userInterface;
+
+    import java.util.List;
+
+    public class WordService {
+
+        private static final List<Character> vowels = List.of('a', 'e', 'i', 'o', 'u');
+        private final static List<String> prepositions = List.of("a", "an");
+        private final static List<String> affirmatives =
+                List.of("y", "yes", "yeah", "yep", "sure", "right", "affirmative",
+                        "correct", "indeed", "you bet", "exactly", "you said it");
+        private final static List<String> negatives =
+                List.of("n", "no", "no way", "nah", "nope",
+                        "negative", "i don't think so", "yeah no");
+
+
+        public static String extractAnimal(String animalMaybeWithPreposition) {
+            final String normalizedAnimalMaybeWithPreposition = normalize(animalMaybeWithPreposition);
+
+            final String[] animalArray =
+                    normalizedAnimalMaybeWithPreposition.split("\\s+", 2);
+
+            if(animalArray.length < 2) {
+                final String preposition = getPreposition(animalArray[0]);
+                final String animal = normalizedAnimalMaybeWithPreposition;
+                return String.format("%s %s", preposition, animal);
+            } else if(isPreposition(animalArray[0])) {
+                return String.format("%s %s", animalArray[0], animalArray[1]);
+            } else {
+                final String preposition = getPreposition(animalArray[0]);
+                return String.format("%s %s %s", preposition, animalArray[0], animalArray[1]);
+            }
+        }
+
+        public static Affirmation checkAffirmation(String someAffirmation) {
+            final String normalizedAffirmation  = normalize(someAffirmation).replaceFirst("[\\.!?]$", "");
+
+            if(isAffirmative(normalizedAffirmation)) {
+                return Affirmation.AFFIRMATIVE;
+            } else if(isNegative(normalizedAffirmation)) {
+                return Affirmation.NEGATIVE;
+            } else {
+                return Affirmation.NEITHER;
+            }
+        }
+
+        private static String getPreposition(String str){
+            return isVowel(str.charAt(0)) ? prepositions.get(1) : prepositions.get(0);
+        }
+
+        private static boolean isVowel(char ch) {
+            return vowels.contains(ch);
+        }
+
+        private static boolean isAffirmative(String maybeAffirmative) {
+            return affirmatives.contains(normalize(maybeAffirmative));
+        }
+
+        private static boolean isNegative(String maybeNegative) {
+            return negatives.contains(normalize(maybeNegative));
+        }
+
+
+
+        private static boolean isPreposition(String maybePreposition) {
+            return prepositions.contains(maybePreposition);
+        }
+
+        private static String normalize(String str) {
+            return str.trim().toLowerCase();
+        }
+
+        enum Affirmation {
+            AFFIRMATIVE, NEGATIVE, NEITHER
+        }
+    }
+  learner_created: false
+- name: src/animals/utils/Pair.java
+  visible: true
+  text: |
+    package animals.utils;
+
+    public class Pair<H, T> {
+        public final H head;
+        public final T tail;
+
+        public Pair(H head, T tail) {
+            this.head = head;
+            this.tail = tail;
+        }
+    }
+  learner_created: false
+- name: src/animals/userInterface/UI.java
+  visible: true
+  text: |
+    package animals.userInterface;
+
+    import java.util.Scanner;
+
+    public class UI {
+        final Scanner scanner = new Scanner(System.in);
+
+        public void start(){
+
+            println(Sentences.getGreeting());
+
+            println(Sentences.queryAnimal);
+            final String inputAnimal = getInput();
+            final String animal = WordService.extractAnimal(inputAnimal);
+
+            final String confirmationMessage = Sentences.getConfirmAnimalQuery(animal);
+
+            println(confirmationMessage);
+            final WordService.Affirmation affirmation = getValidConfirmation();
+
+            final String answer = Sentences.getAnswer(affirmation);
+            println(answer);
+
+            final String goodbyeMessage = Sentences.getGoodbye();
+            println(goodbyeMessage);
+            System.exit(0);
+        }
+
+        private WordService.Affirmation getValidConfirmation(){
+
+            final String inputAnswer = getInput();
+            final WordService.Affirmation affirmation = WordService.checkAffirmation(inputAnswer);
+
+            if(affirmation != WordService.Affirmation.NEITHER) {
+                return affirmation;
+            } else {
+                final String confirmationReQuery = Sentences.getConfirmationReQuery();
+                println(confirmationReQuery);
+                return getValidConfirmation();
+            }
+
+        }
+
+        private void println(Object any) {
+            System.out.println(any.toString());
+        }
+
+        private String getInput() {
+            return scanner.nextLine();
+        }
+    }
+  learner_created: false
+- name: src/animals/userInterface/Sentences.java
+  visible: true
+  text: |
+    package animals.userInterface;
+
+    import animals.utils.Pair;
+    import java.time.LocalTime;
+    import java.util.List;
+    import java.util.Random;
+    import java.util.function.Predicate;
+
+
+    public class Sentences {
+
+        public static final String queryAnimal = "Enter an animal:";
+
+        private static final String confirmAnimalTemplate = "Is it %s?";
+        private static final String answerTemplate = "You answered: %s";
+        private static final String yes = "Yes";
+        private static final String no = "No";
+        private static final List<String> reQuerySentences =
+                List.of(
+                        "I'm not sure I caught you: was it yes or no?",
+                        "Funny, I still don't understand, is it yes or no?",
+                        "Oh, it's too complicated for me: just tell me yes or no.",
+                        "Could you please simply say yes or no?",
+                        "Oh, no, don't try to confuse me: say yes or no."
+                );
+        private static final List<String> goodbyeMessages =
+                List.of(
+                        "Bye!",
+                        "See you soon!",
+                        "Have a nice day!",
+                        "See you the next time",
+                        "Talk to you later",
+                        "Au revoir",
+                        "Arrivederci",
+                        "Falou ae, é nois",
+                        "Adios",
+                        "Te visurum",
+                        "Vi ses"
+                );
+        private static final Random random = new Random();
+
+
+
+        public static String getGreeting() {
+            return Greetings.getGreeting();
+        }
+
+        public static String getConfirmAnimalQuery(String animal) {
+
+            return String.format(confirmAnimalTemplate, animal);
+        }
+
+        public static String getConfirmationReQuery(){
+            final int sentenceIndex = random.nextInt(reQuerySentences.size());
+            return reQuerySentences.get(sentenceIndex);
+        }
+
+        public static String getGoodbye() {
+            final int sentenceIndex = random.nextInt(goodbyeMessages.size());
+            return goodbyeMessages.get(sentenceIndex);
+        }
+
+        public static String getAnswer(WordService.Affirmation affirmation) {
+            if(affirmation == WordService.Affirmation.AFFIRMATIVE) {
+                return String.format(answerTemplate, yes);
+            } else if(affirmation == WordService.Affirmation.NEGATIVE) {
+                return String.format(answerTemplate, no);
+            } else {
+                throw new IllegalArgumentException(
+                        "affirmation on getAnswer could be only " +
+                                "affirmative or negative, but was neither");
+            }
+        }
+
+        private static class Greetings {
+            static final String morning = "Good morning!";
+            static final String afternoon = "Good afternoon!";
+            static final String evening = "Good evening!";
+            static final String lateHours = "Hi, night owl!";
+
+
+            static final List<Pair<Predicate<Integer>, String>> testsList =
+                    List.of(
+                            new Pair<>(Greetings::isMorning, morning),
+                            new Pair<>(Greetings::isAfternoon, afternoon),
+                            new Pair<>(Greetings::isEvening, evening),
+                            new Pair<>(Greetings::isLateHours, lateHours)
+                    );
+
+            static String getGreeting(){
+                final LocalTime time = LocalTime.now();
+                final int currentHour = time.getHour();
+                return testsList.stream()
+                        .filter(pair -> pair.head.test(currentHour))
+                        .findFirst()
+                        .orElse(new Pair<>(x -> true, "You are out of the time dimension! NICE!!!"))
+                        .tail;
+            }
+
+            static private boolean isMorning(int currentHour) {
+                return currentHour >= 5 && currentHour <= 12;
+            }
+
+            static private boolean isAfternoon(int currentHour) {
+                return currentHour > 12 && currentHour <= 18;
+            }
+
+            static private boolean isEvening(int currentHour) {
+                return currentHour > 18 ;
+            }
+
+            static private boolean isLateHours(int currentHour) {
+                return currentHour < 5;
+            }
+        }
+
+    }
+  learner_created: false
+- name: test/unclear-answers.script.yaml
+  visible: false
+  text: |
+    #
+    # This is a script to test the interpretation of unclear responses.
+    #
+    ---
+    - [start]
+    - [input, cat]
+    - [input, ""]   # Press Enter to start the game
+    #
+    # The game started
+    #
+    - [contains, "Is it a cat?", "The program should ask: \"Is it a cat?\""]
+    #
+    # Here we substitute all values from the data file
+    #
+    - [input, "{0}"]
+    - - contains
+      - "yes or no"
+      - "The answer \"{0}\" is unclear and the program should ask again."
+  learner_created: false
+- name: test/file-formats.data.yaml
+  visible: false
+  text: |-
+    ---
+    - - json
+    - - xml
+    - - yaml
+  learner_created: false
+- name: test/Scenario.java
+  visible: false
+  text: |-
+    import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+    import org.hyperskill.hstest.testcase.CheckResult;
+    import org.hyperskill.hstest.testing.TestedProgram;
+
+    import java.io.File;
+    import java.io.IOException;
+    import java.util.Map;
+    import java.util.function.Predicate;
+    import java.util.regex.Pattern;
+
+    import static java.text.MessageFormat.format;
+    import static java.util.function.Predicate.not;
+    import static org.hyperskill.hstest.testcase.CheckResult.correct;
+    import static org.hyperskill.hstest.testcase.CheckResult.wrong;
+
+    public class Scenario {
+        private final Object[][] data;
+        private final String[][] script;
+        private TestedProgram main;
+        private String output = "";
+
+        Scenario(String name) throws IOException {
+            data = new YAMLMapper().readValue(new File("test/" + name + ".data.yaml"), String[][].class);
+            script = new YAMLMapper().readValue(new File("test/" + name + ".script.yaml"), String[][].class);
+            System.out.println("Scenario '" + name + "' is started.");
+            System.out.println();
+        }
+
+        CheckResult check() {
+            for (var values : data) {
+                for (var action : script) {
+                    final var command = action[0];
+                    switch (command) {
+                        case "start":
+                            main = new TestedProgram();
+                            output = action.length == 1
+                                    ? main.start()
+                                    : main.start(format(action[1], values).split(" "));
+                            output = output.trim();
+                            continue;
+                        case "input":
+                            output = main.execute(format(action[1], values)).trim();
+                            continue;
+                        case "finish":
+                            if (main.isFinished()) continue;
+                            return wrong(format(action[1], values));
+                        default:
+                            final Map<String, Predicate<String>> validation = Map.of(
+                                    "contains", output::contains,
+                                    "not contains", not(output::contains),
+                                    "file exists", file -> new File(file).exists(),
+                                    "file delete", file -> new File(file).delete(),
+                                    "find", pattern -> Pattern.compile(pattern).matcher(output).find(),
+                                    "matches", output::matches);
+
+                            final var expected = format(action[1], values);
+                            if (validation.get(command).test(expected)) {
+                                continue;
+                            }
+                            final var feedback = format(action[2], values) + System.lineSeparator()
+                                    + "Expected " + command + ": \"" + expected + "\"";
+                            return wrong(feedback);
+                    }
+                }
+            }
+            return correct();
+        }
+
+    }
+  learner_created: false
+- name: test/negative-answers.script.yaml
+  visible: false
+  text: |
+    #
+    # This is a script to test the correct interpretation of negative answers.
+    #
+    ---
+    - [start]
+    - [input, cat]
+    - [input, ""]   # Press Enter to start the game
+    #
+    # The game started
+    #
+    - [contains, "Is it a cat?", "The program should ask: \"Is it a cat?\""]
+    #
+    # Here we substitute all values from the data file
+    #
+    - [input, "{0}"]
+    - - not contains
+      - "yes or no"
+      - "The answer \"{0}\" should be treated as correct negative."
+  learner_created: false
+- name: test/positive-answers.data.yaml
+  visible: false
+  text: |-
+    #
+    # The possible positive answers
+    #
+    ---
+    # The program must ignore the case of letters.
+    - - y
+    - - Y
+    # The user can put a point
+    - - y.
+    - - Y.
+    # An exclamation mark is also allowed.
+    - - y!
+    - - Y!
+    # The program must ignore leading spaces.
+    - - "   Yes"
+    # As well ignore trailing spaces.
+    - - "Yes   "
+    # All of the following expressions are valid answers.
+    - - yes
+    - - Yes
+    - - YES
+    - - yes.
+    - - Yes!
+    - - YES!
+    - - yES!
+    - - YeS
+    - - Yeah
+    - - yeah
+    - - Yeah!
+    - - YeAh.
+    - - YEAH
+    - - yep
+    - - yEp
+    - - Yep!
+    - - YEP.
+    - - sure
+    - - Sure!
+    - - SURE!
+    - - surE.
+    - - right
+    - - Right.
+    - - Right!
+    - - affirmative
+    - - Affirmative!
+    - - correct
+    - - correct.
+    - - indeed
+    - - you bet
+    - - exactly
+    - - you said it.
+    - - you said it!
+    - - you said it
+  learner_created: false
+- name: test/the-first-question.script.yaml
+  visible: false
+  text: |-
+    #
+    # This is a script to test the generation of the first question.
+    #
+    ---
+    - [start]
+    - [input, "{0}"]
+    - [input, ""]   # Press Enter to start the game
+    #
+    # The game started
+    #
+    - [contains, "Is it {1}?", "The program should ask: \"Is it {1}?\""]
+  learner_created: false
+- name: test/negative-answers.data.yaml
+  visible: false
+  text: |
+    #
+    # The possible negative answers
+    #
+    ---
+    # The program must ignore the case of letters.
+    - - n
+    - - N
+    # The user can put a point
+    - - n.
+    - - N.
+    # An exclamation mark is also allowed.
+    - - n!
+    - - N!
+    # The program must ignore leading spaces.
+    - - "   No"
+    # As well ignore trailing spaces.
+    - - "No   "
+    # All of the following expressions are valid answers.
+    - - no
+    - - nO
+    - - NO
+    - - No
+    - - no.
+    - - no!
+    - - No!
+    - - NO!
+    - - no way
+    - - no way!
+    - - No Way!
+    - - NO WAY!
+    - - no waY.
+    - - nah
+    - - Nah.
+    - - NAH!
+    - - naH
+    - - nope
+    - - NoPe!
+    - - NOPE.
+    - - negative
+    - - Negative.
+    - - i don't think so
+    - - I don't think so
+    - - I don't think so.
+    - - I don't Think SO.
+    - - yeah no
+    - - yeah no.
+    - - yeah no!
+    - - yeah NO!
+  learner_created: false
+- name: test/GuessAnimalTest.java
+  visible: false
+  text: |-
+    import org.hyperskill.hstest.dynamic.DynamicTest;
+    import org.hyperskill.hstest.stage.StageTest;
+    import org.hyperskill.hstest.testcase.CheckResult;
+
+    import java.io.File;
+    import java.io.IOException;
+    import java.util.stream.Stream;
+
+    public class GuessAnimalTest extends StageTest<String> {
+        final String[] script = new String[]{
+                "the-first-question",
+                "positive-answers",
+                "negative-answers",
+                "unclear-answers"
+        };
+
+        @DynamicTest(data = "script")
+        CheckResult runScripts(final String script) throws IOException {
+            return new Scenario(script).check();
+        }
+
+        @DynamicTest
+        CheckResult testFileFormats() throws IOException {
+            final var result = new Scenario("file-formats").check();
+
+            Stream.of("yaml", "json", "xml")
+                    .map("animals."::concat)
+                    .map(File::new)
+                    .filter(File::exists)
+                    .forEach(File::delete);
+
+            return result;
+        }
+    }
+  learner_created: false
+- name: test/unclear-answers.data.yaml
+  visible: false
+  text: |-
+    #
+    # All of the following expressions should be treated as unclear
+    #
+    ---
+    - - y..
+    - - Y!.
+    - - ye
+    - - jes
+    - - Jes
+    - - yes...
+    - - да
+    - - Так
+    - - yes, yes
+    - - Yea
+    - - Ja
+    - - Jawohl!
+    - - ja natürlich!
+    - - so genau
+    - - 1
+    - - +
+    - - yepi
+    - - Yep!!
+    - - Yes, sure!
+    - - Ok
+    - - Rights
+    - - affErmative
+    - - n..
+    - - N!!
+    - - nea
+    - - nop
+    - - noppi
+    - - no wa
+    - - no way!!!
+    - - na
+    - - nahi
+    - - nega
+    - - negat
+    - - negati
+    - - negativ
+    - - i don't think..
+    - - i don't
+    - - i
+    - - I no
+    - - i don't think so...
+    - -
+  learner_created: false
+- name: test/the-first-question.data.yaml
+  visible: false
+  text: |-
+    ---
+    - [cat, a cat]
+    - [DOG, a dog]
+    - [hare, a hare]
+    - [WOLF, a wolf]
+    - [uniCorn, an unicorn]
+    - [uniCorn, an unicorn]
+    - [A Unicorn, a unicorn]
+    - [APE, an ape]
+    - [uniCorn, an unicorn]
+    - [uniCorn, an unicorn]
+    - [linX, a linx]
+  learner_created: false
+- name: test/file-formats.script.yaml
+  visible: false
+  text: |+
+    #
+    # This is a script to test file formats: JSON, YAML, XML.
+    #
+    ---
+    - [start, "-type {0}"]
+    - [matches, "(?si).*animal.*", The program should asks the user for a favourite animal]
+    - [input, cat]
+    - - contains
+      - You think of an animal, and I guess it.
+      - The program should asks the user to think of an animal
+    - [input, ""] # Press Enter to start the game
+    #
+    # The first game started
+    #
+    - - contains
+      - Is it a cat?
+      - The program should asks the user is it the cat
+    - [input, no]
+    - - contains
+      - I give up. What animal do you have in mind?
+      - The program should give up
+    - [input, dog]
+    - - contains
+      - Specify a fact that distinguishes a cat from a dog
+      - The program should find out how one animal differs from another.
+    - [input, It can climbs tree]
+    - - contains
+      - Is the statement correct for a dog?
+      - The program should clarify if the statement is correct for a dog.
+    - [input, No]
+    - - matches
+      - (?si).*(again|repeat|one more game).*
+      - The program should ask to play again
+    - [input, Yes]
+    - - contains
+      - You think of an animal, and I guess it.
+      - The program should asks the user to think of an animal
+    - [input, ""] # Press Enter to start the game
+    #
+    # The second game started
+    #
+    - - contains
+      - Can it climbs tree?
+      - The only question in the knowledge tree should be "Can it climbs tree?"
+    - [input, Yes]
+    - - contains
+      - Is it a cat?
+      - The program doesn't print the expected message
+    - [input, No]
+    - - contains
+      - I give up. What animal do you have in mind?
+      - The program should give up
+    - - input
+      - a lynx
+    - - input
+      - It is living in the forest
+    - - contains
+      - Is the statement correct for a lynx?
+      - The program doesn't print the expected message
+    - [input, Yes]
+    - [input, No]
+    - [finish, The program should finish when the user refuse the new game]
+    - - file exists
+      - "animals.{0}"
+      - When the program started with option "java -type {0}" the data should be saved to "animals.{0}"
+
+    #
+    # Start the program again and load the Knowledge Tree
+    #
+
+    - [start, "-type {0}"]
+    - - not contains
+      - Which animal do you like most?
+      - If knowledge base is exist the program should not asks the user for a favourite animal
+    - - contains
+      - You think of an animal, and I guess it.
+      - The program should asks the user to think of an animal
+    - [input, ""]
+    #
+    # The third game started. Test for the Knowledge Tree.
+    #
+    - - contains
+      - Can it climbs tree?
+      - The root question in knowledge tree should be "Can it climbs tree?"
+    - [input, yes]
+    - - contains
+      - Is it living in the forest?
+      - The second question should be 'Is it living in the forest?'
+    - [input, sure]
+    - - contains
+      - Is it a lynx?
+      - The last question should be 'Is it a lynx?'
+    - [input, right]
+    - - matches
+      - (?si).*(again|repeat|one more game).*
+      - The program should ask to play again
+    - [input, No]
+    - [finish, The program should finish when the user refuse the new game]
+    #
+    # Clear workspace after the test
+    #
+    - - file delete
+      - "animals.{0}"
+      - "The test can't delete animals.{0} file."
+
+  learner_created: false
+- name: test/positive-answers.script.yaml
+  visible: false
+  text: |+
+    #
+    # This is a script to test the correct interpretation of negative responses.
+    #
+    ---
+    - [start]
+    - [input, cat]
+    - [input, ""]   # Press Enter to start the game
+    #
+    # The game started
+    #
+    - [contains, "Is it a cat?", "The program should ask: \"Is it a cat?\""]
+    #
+    # Here we substitute all values from the data file
+    #
+    - [input, "{0}"]
+    - - not contains
+      - "yes or no"
+      - "The answer \"{0}\" should be treated as correct positive."
+
+  learner_created: false
+feedback_link: https://hyperskill.org/projects/132/stages/706/implement#comment
+status: Unchecked
+record: -1
