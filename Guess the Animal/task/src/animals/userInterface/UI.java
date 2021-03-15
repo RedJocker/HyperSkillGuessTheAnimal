@@ -3,8 +3,10 @@ package animals.userInterface;
 import animals.model.Animal;
 import animals.model.Distinction;
 import animals.model.Fact;
+import animals.model.Node;
 
 import static animals.userInterface.WordService.Affirmation;
+import static animals.userInterface.WordService.extractAnimal;
 
 
 import java.util.Scanner;
@@ -13,34 +15,93 @@ public class UI {
     final Scanner scanner = new Scanner(System.in);
 
     public void start(){
-        getFactRoutine();
+        Node node = initRoutine();
+
+        while(true) {
+            println(Sentences.youThinkOfAnAnimal);
+            println(Sentences.pressEnterWhenReady);
+            getInput();
+
+            node = game(node);
+            wannaPlayAgain();
+        }
+
+
     }
 
-    public void getFactRoutine() {
+    private Animal initRoutine(){
         println(Sentences.getGreeting());
         println("");
 
-        println(Sentences.queryFirstAnimal);
-        final String firstAnimalStr = getInput();
-        final Animal firstAnimal = WordService.extractAnimal(firstAnimalStr);
+        println(Sentences.iWantToLearnAnimals);
+        println(Sentences.whichAnimalFavorite);
 
-        println(Sentences.querySecondAnimal);
-        final String secondAnimalStr = getInput();
-        final Animal secondAnimal = WordService.extractAnimal(secondAnimalStr);
+        final String inputAnimal = getInput();
+        println(Sentences.learnedSoMuch);
+        println(Sentences.letsPlay);
+        return WordService.extractAnimal(inputAnimal);
+    }
+
+    private Node game(Node node){
+        if(node.isLeaf()) {
+            final Animal guessAnimal = (Animal) node;
+            println(Sentences.getConfirmAnimalQuery(guessAnimal.getNameWithPreposition()));
+            Affirmation affirmation = getValidConfirmation();
+
+            if(affirmation == Affirmation.AFFIRMATIVE) {
+                println(Sentences.iWon);
+                return node;
+            } else {
+                println(Sentences.iGiveUp);
+                String newAnimalStr = getInput();
+                Animal newAnimal = extractAnimal(newAnimalStr);
+                Fact fact = getValidFact(guessAnimal, newAnimal);
+
+                println(Sentences.getIsItCorrectForQueryTemplate(newAnimal));
+                final Affirmation isPositiveForSecondAnimal = getValidConfirmation();
+                final Distinction distinction = getDistinction(isPositiveForSecondAnimal, guessAnimal, newAnimal, fact);
+                println(Sentences.getConclusions(distinction, isPositiveForSecondAnimal));
+                println(Sentences.learnedSoMuch);
+
+                return distinction;
+            }
 
 
-        final Fact fact = getValidFact(firstAnimal, secondAnimal);
+        } else {
+            final Distinction guessDistinction = (Distinction) node;
+            println(guessDistinction.fact.getQuestion());
+            Affirmation affirmation = getValidConfirmation();
 
-        println(Sentences.getIsItCorrectForQueryTemplate(secondAnimal));
-        final Affirmation isPositiveForSecondAnimal = getValidConfirmation();
-        final Distinction distinction = getDistinction(isPositiveForSecondAnimal, firstAnimal, secondAnimal, fact);
+            if(affirmation == Affirmation.AFFIRMATIVE) {
+                return new Distinction(guessDistinction.fact,
+                                        game(guessDistinction.positiveForFact),
+                                        guessDistinction.negativeForFact);
+            } else {
+                return new Distinction(guessDistinction.fact,
+                        guessDistinction.positiveForFact,
+                        game(guessDistinction.negativeForFact));
+            }
 
-        println(Sentences.getConclusions(distinction, isPositiveForSecondAnimal));
-        println("");
-
-        println(Sentences.getGoodbye());
+        }
 
     }
+
+    private void wannaPlayAgain(){
+        println("");
+        println(Sentences.wannaPlayAgain);
+        final Affirmation affirmation = getValidConfirmation();
+
+        if(affirmation == Affirmation.NEGATIVE) {
+            println("");
+            println(Sentences.getGoodbye());
+            System.exit(0);
+        } else {
+            println(Sentences.playAgainEnthusiasm);
+            println("");
+        }
+    }
+
+
 
     private Fact getValidFact(Animal firstAnimal, Animal secondAnimal) {
         println(Sentences.getSpecifyFactQueryTemplate(firstAnimal, secondAnimal));
@@ -77,6 +138,36 @@ public class UI {
         final Animal negativeForFact = isSecondAnimalPositiveForFact ? firstAnimal : secondAnimal;
 
         return new Distinction(fact, positiveForFact, negativeForFact);
+    }
+
+
+    /**
+     * @deprecated migrated to game() on task3
+     */
+    public void getFactRoutine() {
+        println(Sentences.getGreeting());
+        println("");
+
+        println(Sentences.queryFirstAnimal);
+        final String firstAnimalStr = getInput();
+        final Animal firstAnimal = WordService.extractAnimal(firstAnimalStr);
+
+        println(Sentences.querySecondAnimal);
+        final String secondAnimalStr = getInput();
+        final Animal secondAnimal = WordService.extractAnimal(secondAnimalStr);
+
+
+        final Fact fact = getValidFact(firstAnimal, secondAnimal);
+
+        println(Sentences.getIsItCorrectForQueryTemplate(secondAnimal));
+        final Affirmation isPositiveForSecondAnimal = getValidConfirmation();
+        final Distinction distinction = getDistinction(isPositiveForSecondAnimal, firstAnimal, secondAnimal, fact);
+
+        println(Sentences.getConclusions(distinction, isPositiveForSecondAnimal));
+        println("");
+
+        println(Sentences.getGoodbye());
+
     }
 
 

@@ -1,6 +1,6 @@
 package animals.model;
 
-public class Animal {
+public class Animal implements Node {
     public final String name;
     private final String preposition;
 
@@ -11,5 +11,10 @@ public class Animal {
 
     public String getNameWithPreposition() {
         return String.format("%s %s", preposition, name);
+    }
+
+    @Override
+    public boolean isLeaf() {
+        return true;
     }
 }

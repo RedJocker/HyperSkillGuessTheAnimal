@@ -20,12 +20,22 @@ public class Sentences {
                                                         " - It can fly\n" +
                                                         " - It has horn\n" +
                                                         " - It is a mammal";
+    public static final String youThinkOfAnAnimal = "You think of an animal, and I guess it.";
+    public static final String pressEnterWhenReady = "Press enter when you're ready.";
+    public static final String iWantToLearnAnimals = "I want to learn about animals.";
+    public static final String whichAnimalFavorite = "Which animal do you like most?";
+    public static final String learnedSoMuch = "Wonderful! I've learned so much about animals!";
+    public static final String letsPlay = "Let's play a game!";
+    public static final String iWon = "I won!";
+    public static final String iGiveUp = "I give up. What animal do you have in mind?";
+    public static final String wannaPlayAgain = "Would you like to play again?";
+    public static final String playAgainEnthusiasm = "Ow yes!";
 
     private static final String confirmAnimalTemplate = "Is it %s?";
     private static final String answerTemplate = "You answered: %s";
     private static final String specifyFactQueryTemplate = "Specify a fact that distinguishes %s from %s.%n" +
             "The sentence should be of the format: 'It can/has/is ...'.";
-    private static final String isItCorrectForQueryTemplate = "Is it correct for %s?";
+    private static final String isItCorrectForQueryTemplate = "Is the statement correct for %s?";
 
     private static final String iHaveLearnedAffirmationTemplate = "I have learned the following facts about animals:%n" +
             "- %s%n" +
@@ -112,17 +122,20 @@ public class Sentences {
     public static String getConclusions(Distinction distinction, Affirmation isPositiveForSecondAnimal) {
         final String affirmation = distinction.fact.getPositiveAffirmation();
         final String negation = distinction.fact.getNegativeAffirmation();
-        final String positiveAnimal = String.format(
-                factLearnedTemplate, distinction.animalPositiveForFact.name, affirmation
+        final Animal positiveAnimal = (Animal) distinction.positiveForFact;
+        final Animal negativeAnimal = (Animal) distinction.negativeForFact;
+
+        final String positiveAnimalStr = String.format(
+                factLearnedTemplate, positiveAnimal.name, affirmation
         );
-        final String negativeAnimal = String.format(
-                factLearnedTemplate, distinction.animalNegativeForFact.name, negation
+        final String negativeAnimalStr = String.format(
+                factLearnedTemplate, negativeAnimal.name, negation
         );
 
         final String firstFactLearned =
-                isPositiveForSecondAnimal == Affirmation.AFFIRMATIVE ? negativeAnimal :positiveAnimal;
+                isPositiveForSecondAnimal == Affirmation.AFFIRMATIVE ? negativeAnimalStr :positiveAnimalStr;
         final String secondFactLearned =
-                isPositiveForSecondAnimal == Affirmation.AFFIRMATIVE ? positiveAnimal :negativeAnimal;
+                isPositiveForSecondAnimal == Affirmation.AFFIRMATIVE ? positiveAnimalStr :negativeAnimalStr;
 
         final String factsLearned =
                 String.format(iHaveLearnedAffirmationTemplate, firstFactLearned, secondFactLearned);

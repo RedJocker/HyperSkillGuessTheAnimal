@@ -42,9 +42,7 @@ public class Scenario {
                         output = main.execute(format(action[1], values)).trim();
                         continue;
                     case "finish":
-                        if (main.isFinished()) {
-                            continue;
-                        }
+                        if (main.isFinished()) continue;
                         return wrong(format(action[1], values));
                     default:
                         final Map<String, Predicate<String>> validation = Map.of(

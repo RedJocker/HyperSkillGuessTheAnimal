@@ -84,7 +84,7 @@ public class WordService {
         }
 
         private static Affirmation checkAffirmation(String someAffirmation) {
-            final String normalizedAffirmation  = normalize(someAffirmation).replaceFirst("[.!?]+$", "");
+            final String normalizedAffirmation  = normalize(someAffirmation).replaceFirst("[.!?]$", "");
 
             if(Affirmation.isAffirmative(normalizedAffirmation)) {
                 return Affirmation.AFFIRMATIVE;
