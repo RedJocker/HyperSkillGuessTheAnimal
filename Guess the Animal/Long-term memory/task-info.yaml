@@ -335,19 +335,35 @@ files:
     import static org.hyperskill.hstest.testcase.CheckResult.wrong;
 
     public class Scenario {
-        private final Object[][] data;
-        private final String[][] script;
         private TestedProgram main;
         private String output = "";
+        private final File dataFile;
+        private final File scriptFile;
 
-        Scenario(String name) throws IOException {
-            data = new YAMLMapper().readValue(new File("test/" + name + ".data.yaml"), String[][].class);
-            script = new YAMLMapper().readValue(new File("test/" + name + ".script.yaml"), String[][].class);
+        Scenario(String name) {
+            dataFile = new File("test/" + name + ".data.yaml");
+            scriptFile = new File("test/" + name + ".script.yaml");
             System.out.println("Scenario '" + name + "' is started.");
             System.out.println();
         }
 
         CheckResult check() {
+
+            final Object[][] data;
+            final String[][] script;
+
+            try {
+                data = new YAMLMapper().readValue(dataFile, String[][].class);
+                script = new YAMLMapper().readValue(scriptFile, String[][].class);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return wrong("Cannot find the files "
+                        + dataFile.getName()
+                        + " or "
+                        + scriptFile.getName()
+                        + ", looks like you deleted or renamed it. Please, revert the changes.");
+            }
+
             for (var values : data) {
                 for (var action : script) {
                     final var command = action[0];
@@ -363,7 +379,9 @@ files:
                             output = main.execute(format(action[1], values)).trim();
                             continue;
                         case "finish":
-                            if (main.isFinished()) continue;
+                            if (main.isFinished()) {
+                                continue;
+                            }
                             return wrong(format(action[1], values));
                         default:
                             final Map<String, Predicate<String>> validation = Map.of(
@@ -379,7 +397,8 @@ files:
                                 continue;
                             }
                             final var feedback = format(action[2], values) + System.lineSeparator()
-                                    + "Expected " + command + ": \"" + expected + "\"";
+                                    + "Expected " + command + ": \"" + expected + "\"" + System.lineSeparator()
+                                    + "Actual data is: \"" + output + "\".";
                             return wrong(feedback);
                     }
                 }
@@ -769,6 +788,208 @@ files:
       - "The answer \"{0}\" should be treated as correct positive."
 
   learner_created: false
+- name: src/animals/model/Fact.java
+  visible: true
+  text: |
+    package animals.model;
+
+    import java.util.Objects;
+
+    import static animals.userInterface.WordService.Verb;
+
+    public class Fact {
+
+        public final String description;
+        public final Verb verb;
+
+
+        public Fact(Verb verb, String description) {
+            this.verb = verb;
+            this.description = description;
+        }
+
+        public String getPositiveAffirmation(){
+            return verb.positive + " " + description;
+        }
+
+        public String getNegativeAffirmation(){
+            return verb.negative + " " + description;
+        }
+
+        public String getQuestion(){
+            return verb.question + " " + description + "?";
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (this == other) return true;
+            if (other == null || getClass() != other.getClass()) return false;
+            Fact fact = (Fact) other;
+            return description.equals(fact.description) &&
+                    verb == fact.verb;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(description, verb);
+        }
+    }
+  learner_created: true
+- name: src/animals/model/Node.java
+  visible: true
+  text: |
+    package animals.model;
+
+    public interface Node {
+
+
+        public boolean isLeaf();
+    }
+  learner_created: true
+- name: src/animals/model/Distinction.java
+  visible: true
+  text: |
+    package animals.model;
+
+    public class Distinction implements Node {
+        public final Fact fact;
+        public final Node positiveForFact;
+        public final Node negativeForFact;
+
+        public Distinction(Fact fact, Node positiveForFact, Node negativeForFact) {
+            this.fact = fact;
+            this.positiveForFact = positiveForFact;
+            this.negativeForFact = negativeForFact;
+        }
+
+
+        @Override
+        public boolean isLeaf() {
+            return false;
+        }
+
+        public Distinction addPositive(Distinction positiveForFact) {
+            return new Distinction(fact, positiveForFact, negativeForFact);
+        }
+
+        public Distinction addNegative(Distinction negativeForFact) {
+            return new Distinction(fact, positiveForFact, negativeForFact);
+        }
+    }
+  learner_created: true
+- name: src/animals/testings/WordServiceTests.java
+  visible: true
+  text: |
+    package animals.testings;
+
+    import animals.model.Fact;
+    import animals.userInterface.WordService;
+
+    import static animals.userInterface.WordService.Verb;
+
+    public class WordServiceTests {
+
+        public static void testCheckFact(){
+            final String method = new Object(){}.getClass().getEnclosingMethod().getName();
+
+            final String given = "It can climb trees.";
+            final boolean expected = true;
+            final boolean result = WordService.checkHasValidVerb(given);
+            check(method, expected, result, given);
+
+            final String given2 = "It has a horn";
+            final boolean expected2 = true;
+            final boolean result2 = WordService.checkHasValidVerb(given2);
+            check(method, expected2, result2, given2);
+
+            final String given3 = "It is a shy animal";
+            final boolean expected3 = true;
+            final boolean result3 = WordService.checkHasValidVerb(given3);
+            check(method, expected3, result3, given3);
+
+            final String given4 = "Is it a mammal?";
+            final boolean expected4 = false;
+            final boolean result4 = WordService.checkHasValidVerb(given4);
+            check(method, expected4, result4, given4);
+
+            final String given5 = "It is a mammal?";
+            final boolean expected5 = true;
+            final boolean result5 = WordService.checkHasValidVerb(given5);
+            check(method, expected5, result5, given5);
+
+        }
+
+        public static void testExtractFact(){
+            final String method = new Object(){}.getClass().getEnclosingMethod().getName();
+
+            final String given = "It can climb trees.";
+            final Fact expected = new Fact(Verb.CAN, "climb trees");
+            final Fact result = WordService.extractFact(given);
+            check(method, expected, result, given);
+
+
+            final String given2 = "It has a horn";
+            final Fact expected2 = new Fact(Verb.HAS, "a horn");
+            final Fact result2 = WordService.extractFact(given2);
+            check(method, expected2, result2, given2);
+
+            final String given3 = "It is a shy animal";
+            final Fact expected3 = new Fact(Verb.IS, "a shy animal");
+            final Fact result3 = WordService.extractFact(given3);
+            check(method, expected3, result3, given3);
+
+            final String given4 = "It is a mammal?";
+            final Fact expected4 = new Fact(Verb.IS, "a mammal");
+            final Fact result4 = WordService.extractFact(given4);
+            check(method, expected4, result4, given4);
+
+        }
+
+        private static <T> void check(String method, T expected, T result, String tested){
+            if(!expected.equals(result)) {
+                throw new AssertionError(method + " failed test: " + tested);
+            } else {
+                System.out.println(method + " passed test: " + tested);
+            }
+        }
+    }
+  learner_created: true
+- name: src/animals/model/Animal.java
+  visible: true
+  text: |
+    package animals.model;
+
+    public class Animal implements Node {
+        public final String name;
+        private final String preposition;
+
+        public Animal(String preposition, String name) {
+            this.preposition = preposition;
+            this.name = name;
+        }
+
+        public String getNameWithPreposition() {
+            return String.format("%s %s", preposition, name);
+        }
+
+        @Override
+        public boolean isLeaf() {
+            return true;
+        }
+    }
+  learner_created: true
+- name: src/animals/testings/MainTest.java
+  visible: true
+  learner_created: true
+- name: src/animals/testings/TestUtils.java
+  visible: true
+  learner_created: true
+- name: src/animals/service/MapperHelper.java
+  visible: true
+  learner_created: true
 feedback_link: https://hyperskill.org/projects/132/stages/706/implement#comment
-status: Unchecked
+status: Solved
+feedback:
+  message: Congratulations!
+  time: Tue, 23 Mar 2021 21:01:43 UTC
 record: -1

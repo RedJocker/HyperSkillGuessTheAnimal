@@ -4,32 +4,54 @@ import animals.model.Animal;
 import animals.model.Distinction;
 import animals.model.Fact;
 import animals.model.Node;
+import animals.service.MapperHelper;
 
 import static animals.userInterface.WordService.Affirmation;
 import static animals.userInterface.WordService.extractAnimal;
-
 
 import java.util.Scanner;
 
 public class UI {
     final Scanner scanner = new Scanner(System.in);
+    final MapperHelper mapper;
+
+    public UI(String type) {
+        this.mapper = new MapperHelper(type);
+    }
 
     public void start(){
-        Node node = initRoutine();
+        /* mutating */ Node root = initRoutine();
+
 
         while(true) {
+
             println(Sentences.youThinkOfAnAnimal);
             println(Sentences.pressEnterWhenReady);
             getInput();
 
-            node = game(node);
-            wannaPlayAgain();
+            root = game(root);
+
+            wannaPlayAgain(root);
+        }
+
+
+
+    }
+
+    private Node initRoutine(){
+
+        final Node root = mapper.loadKnowledge();
+
+        if(root != null) {
+            return root;
+        } else {
+            return getFavoriteAnimal();
         }
 
 
     }
 
-    private Animal initRoutine(){
+    private Animal getFavoriteAnimal(){
         println(Sentences.getGreeting());
         println("");
 
@@ -46,16 +68,16 @@ public class UI {
         if(node.isLeaf()) {
             final Animal guessAnimal = (Animal) node;
             println(Sentences.getConfirmAnimalQuery(guessAnimal.getNameWithPreposition()));
-            Affirmation affirmation = getValidConfirmation();
+            final Affirmation affirmation = getValidConfirmation();
 
             if(affirmation == Affirmation.AFFIRMATIVE) {
                 println(Sentences.iWon);
                 return node;
             } else {
                 println(Sentences.iGiveUp);
-                String newAnimalStr = getInput();
-                Animal newAnimal = extractAnimal(newAnimalStr);
-                Fact fact = getValidFact(guessAnimal, newAnimal);
+                final String newAnimalStr = getInput();
+                final Animal newAnimal = extractAnimal(newAnimalStr);
+                final Fact fact = getValidFact(guessAnimal, newAnimal);
 
                 println(Sentences.getIsItCorrectForQueryTemplate(newAnimal));
                 final Affirmation isPositiveForSecondAnimal = getValidConfirmation();
@@ -70,7 +92,7 @@ public class UI {
         } else {
             final Distinction guessDistinction = (Distinction) node;
             println(guessDistinction.fact.getQuestion());
-            Affirmation affirmation = getValidConfirmation();
+            final Affirmation affirmation = getValidConfirmation();
 
             if(affirmation == Affirmation.AFFIRMATIVE) {
                 return new Distinction(guessDistinction.fact,
@@ -86,12 +108,13 @@ public class UI {
 
     }
 
-    private void wannaPlayAgain(){
+    private void wannaPlayAgain(Node root){
         println("");
         println(Sentences.wannaPlayAgain);
         final Affirmation affirmation = getValidConfirmation();
 
         if(affirmation == Affirmation.NEGATIVE) {
+            mapper.saveKnowledge(root);
             println("");
             println(Sentences.getGoodbye());
             System.exit(0);

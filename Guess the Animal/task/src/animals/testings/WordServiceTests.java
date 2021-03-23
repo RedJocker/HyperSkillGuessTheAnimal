@@ -4,6 +4,7 @@ import animals.model.Fact;
 import animals.userInterface.WordService;
 
 import static animals.userInterface.WordService.Verb;
+import static animals.testings.TestUtils.*;
 
 public class WordServiceTests {
 
@@ -63,11 +64,5 @@ public class WordServiceTests {
 
     }
 
-    private static <T> void check(String method, T expected, T result, String tested){
-        if(!expected.equals(result)) {
-            throw new AssertionError(method + " failed test: " + tested);
-        } else {
-            System.out.println(method + " passed test: " + tested);
-        }
-    }
+
 }

@@ -1,28 +1,39 @@
 package animals.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.Objects;
 
 import static animals.userInterface.WordService.Verb;
 
 public class Fact {
 
+    @JsonProperty("description")
     public final String description;
+
+    @JsonProperty("verb")
     public final Verb verb;
 
-
-    public Fact(Verb verb, String description) {
+    @JsonCreator
+    public Fact(@JsonProperty("verb") Verb verb,
+                @JsonProperty("description") String description) {
         this.verb = verb;
         this.description = description;
     }
 
+    @JsonIgnore
     public String getPositiveAffirmation(){
         return verb.positive + " " + description;
     }
 
+    @JsonIgnore
     public String getNegativeAffirmation(){
         return verb.negative + " " + description;
     }
 
+    @JsonIgnore
     public String getQuestion(){
         return verb.question + " " + description + "?";
     }

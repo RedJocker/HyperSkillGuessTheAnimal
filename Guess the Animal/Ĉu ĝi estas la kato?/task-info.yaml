@@ -722,19 +722,35 @@ files:
     import static org.hyperskill.hstest.testcase.CheckResult.wrong;
 
     public class Scenario {
-        private final Object[][] data;
-        private final String[][] script;
         private TestedProgram main;
         private String output = "";
+        private final File dataFile;
+        private final File scriptFile;
 
-        Scenario(String name) throws IOException {
-            data = new YAMLMapper().readValue(new File("test/" + name + ".data.yaml"), String[][].class);
-            script = new YAMLMapper().readValue(new File("test/" + name + ".script.yaml"), String[][].class);
+        Scenario(String name) {
+            dataFile = new File("test/" + name + ".data.yaml");
+            scriptFile = new File("test/" + name + ".script.yaml");
             System.out.println("Scenario '" + name + "' is started.");
             System.out.println();
         }
 
         CheckResult check() {
+
+            final Object[][] data;
+            final String[][] script;
+
+            try {
+                data = new YAMLMapper().readValue(dataFile, String[][].class);
+                script = new YAMLMapper().readValue(scriptFile, String[][].class);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return wrong("Cannot find the files "
+                        + dataFile.getName()
+                        + " or "
+                        + scriptFile.getName()
+                        + ", looks like you deleted or renamed it. Please, revert the changes.");
+            }
+
             for (var values : data) {
                 for (var action : script) {
                     final var command = action[0];
@@ -750,7 +766,9 @@ files:
                             output = main.execute(format(action[1], values)).trim().toLowerCase();
                             continue;
                         case "finish":
-                            if (main.isFinished()) continue;
+                            if (main.isFinished()) {
+                                continue;
+                            }
                             return wrong(format(action[1], values));
                         default:
                             final Map<String, Predicate<String>> validation = Map.of(
